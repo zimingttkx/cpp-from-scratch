@@ -1,8 +1,10 @@
+#include <limits>
 #include <memory>
 #include <unordered_map>
 #include <mutex>
 #include <algorithm>
 #include <cstddef>
+#include <climits>
 #include <optional>
 
 namespace hs_cache{
@@ -73,24 +75,25 @@ public:
 
 template<typename Key, typename Value>
 class KLfuCache : public ICache<Key, Value>{
-private:
-    std::size_t capacity_; // 缓存最大容量
-    std::size_t min_freq_; // 当前全局最小访问频次 用于快速淘汰
-    std::size_t max_average_num_;         // 最大允许平均访问频次（降频阈值）
-    std::size_t cur_average_num_;         // 当前缓存的平均访问频次
-    std::size_t cur_total_num_;           // 所有节点的访问频次总和
-    mutable std::mutex mutex_;
-    NodeMap node_map_;                   
-    std::unordered_map<std::size_t, std::shared_ptr<FreqList<Key, Value>>> freq_to_freq_list_;
-
-public:
     using Node = typename FreqList<Key, Value>::Node;
     using NodePtr = std::shared_ptr<Node>;
     using NodeMap = std::unordered_map<Key, NodePtr>;
 
+private:
+    std::size_t capacity_;
+    std::size_t min_freq_;
+    std::size_t max_average_num_;
+    std::size_t cur_average_num_;
+    std::size_t cur_total_num_;
+    mutable std::mutex mutex_;
+    NodeMap node_map_;
+    std::unordered_map<std::size_t, std::shared_ptr<FreqList<Key, Value>>> freq_to_freq_list_;
+
+public:
+
     explicit KLfuCache(std::size_t capacity, std::size_t max_average_num = 10)
                     : capacity_(capacity)
-                    , min_freq_(std::SIZE_MAX) 
+                    , min_freq_(std::numeric_limits<std::size_t>::max()) 
                     , max_average_num_(max_average_num)
                     , cur_average_num_(0)
                     , cur_total_num_(0){}
@@ -146,7 +149,7 @@ public:
         std::lock_guard<std::mutex> lock(mutex_);
         node_map_.clear();
         freq_to_freq_list_.clear(); 
-        min_freq_ = std::SIZE_MAX;
+        min_freq_ = std::numeric_limits<std::size_t>::max();
         cur_total_num_  = 0;
         cur_average_num_ = 0;
     }
@@ -254,7 +257,7 @@ private:
     // 更新全局最小频次：遍历所有频次链表，找到非空的最小频次
     void update_min_freq()
     {
-        min_freq_ = std::SIZE_MAX; // 修正：加std::
+        min_freq_ = std::numeric_limits<std::size_t>::max();
         for (const auto& pair : freq_to_freq_list_)
         {
             // 链表非空时，更新最小频次
@@ -264,7 +267,7 @@ private:
             }
         }
         // 缓存非空但最小频次未找到，重置为1（默认初始频次）
-        if (min_freq_ == std::SIZE_MAX && !node_map_.empty()) // 修正：加std::
+        if (min_freq_ == std::numeric_limits<std::size_t>::max() && !node_map_.empty())
         {
             min_freq_ = 1;
         }
