@@ -46,6 +46,7 @@ cmake --build .
 | `ICache` 接口 | 已完成 |
 | `LRUCache` | 已完成 |
 | `LFUCache` | 计划中 |
+| `LFUCache` | 已完成 |
 | `ARCCache` | 计划中 |
 | 分片缓存 | 计划中 |
 | 布隆过滤器 | 计划中 |
