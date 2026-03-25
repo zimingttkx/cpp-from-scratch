@@ -108,6 +108,41 @@ public:
         dummy_tail_->prev_ = dummy_head_;
     }
 
+    // 添加三个接口提供给ARC
+
+    // 获取指定Key的访问次数 ARC判断是否迁移到LFU核心
+    std::optional<size_t> getAccessCount(const Key& key) const{
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = node_map_.find(key);
+        if(it != node_map_.end()){
+            return it->second->accessCount_;
+        }
+        return std::nullopt;
+    }
+
+    // 淘汰很久没有使用的节点并返回被淘汰的Key ARC将淘汰key加入到GhostList中
+    std::optional<Key> evictAndGetKey(){
+        std::lock_guard<std::mutex> lock(mutex_);
+        NodePtr least_recent = dummy_head_->next_;
+        if(least_recent == dummy_tail_){
+            return std::nullopt;
+        }
+        Key evict_key = least_recent->key_;
+        removeNode(least_recent);
+        node_map_.erase(evict_key);
+        return evict_key;
+    }
+
+    // 删除指定key的节点 ARC中LRU→LFU迁移时，从LRU移除数据的核心
+    void remove(const Key& key){
+        std::lock_guard<std::mutex> lock(mutex_);
+        auto it = node_map_.find(key);
+        if(it != node_map_.end()){
+            removeNode(it->second);
+            node_map_.erase(it);
+        }
+    }
+
 private:
     void moveToMostRecent(NodePtr node){
         removeNode(node); // 从当前位置离开链表
