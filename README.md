@@ -1,33 +1,56 @@
-# HighSpeedCacheSystem
+# cpp-from-scratch
 
-> 基于 C++20 的轻量级 Header-only 缓存库。
+> 从零手写 C++ 底层组件的开源仓库。
 
-小而精，零依赖，线程安全。
+用 C++20 复现各类系统级数据结构与组件，包括缓存策略、容器、垃圾回收器、内存池等。Header-only，零依赖，线程安全。
 
-## 特性
+## 项目结构
 
-- **Header-only** — 引入头文件即可使用，无需链接
-- **泛型模板** — 支持任意键值类型
-- **线程安全** — `std::mutex` 保护，可直接用于多线程场景
-- **O(1) 操作** — 哈希表 + 双向链表实现
+```
+include/
+├── containers/        # 基础容器：红黑树、B树、跳表、哈希表...
+├── algorithms/        # 算法：排序、搜索...
+└── systems/           # 系统级组件
+    └── cache/         # 缓存策略（LRU / LFU / ARC）
+```
 
-## 快速上手
+命名空间统一为 `cfs::<模块>`，各模块互不耦合。
+
+## 已实现
+
+### `systems/cache` — 缓存策略
+
+| 组件 | 说明 |
+|---|---|
+| `ICache<K,V>` | 统一缓存抽象接口 |
+| `LRUCache<K,V>` | 最近最少使用，哈希表 + 双向链表，O(1) |
+| `KLfuCache<K,V>` | 最低频次淘汰，支持频次衰减（K-LFU），解决缓存老化 |
+| `ARCCache<K,V>` | 自适应替换缓存，LRU/LFU 双分区 + GhostList 动态调整 |
 
 ```cpp
-#include "hs_cache/lru_cache.h"
-#include <iostream>
+#include "systems/cache/lru_cache.h"
 
-int main() {
-    hs_cache::LRUCache<std::string, std::string> cache(1000);
-
-    cache.put("key", "value");
-    if (auto val = cache.get("key")) {
-        std::cout << val.value() << std::endl;  // "value"
-    }
-
-    return 0;
+cfs::cache::LRUCache<std::string, std::string> cache(1000);
+cache.put("key", "value");
+if (auto val = cache.get("key")) {
+    std::cout << val.value() << std::endl;
 }
 ```
+
+## 路线图
+
+| 模块 | 类别 | 状态 |
+|---|---|---|
+| LRU / LFU / ARC 缓存 | `systems/cache` | 已完成 |
+| 红黑树 | `containers` | 计划中 |
+| B 树 | `containers` | 计划中 |
+| 跳表 | `containers` | 计划中 |
+| 内存池 | `systems` | 计划中 |
+| 线程池 | `systems` | 计划中 |
+| 垃圾回收器 | `systems` | 计划中 |
+| 布隆过滤器 | `systems` | 计划中 |
+| 协程调度器 | `systems` | 计划中 |
+| Mini Redis | `systems` | 计划中 |
 
 ## 构建
 
@@ -38,19 +61,6 @@ mkdir build && cd build
 cmake ..
 cmake --build .
 ```
-
-## 开发进度
-
-| 模块 | 状态 |
-|---|---|
-| `ICache` 接口 | 已完成 |
-| `LRUCache` | 已完成 |
-| `LFUCache` | 已完成 |
-| `LFUCache` | 已完成 |
-| `ARCCache` | 已完成 |
-| 分片缓存 | 计划中 |
-| 布隆过滤器 | 计划中 |
-| 单元测试 | 计划中 |
 
 ## 许可证
 
