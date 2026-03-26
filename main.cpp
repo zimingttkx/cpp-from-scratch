@@ -1,15 +1,12 @@
-// HighSpeedCacheSystem - 高性能缓存系统
-// 本文件为项目入口，用于基础功能验证
-
 #include <iostream>
 #include <cassert>
 #include <string>
 #include <memory>
-#include "hs_cache/cache.h"
-#include "hs_cache/lru_cache.h"
-#include "hs_cache/lfu_cache.h"
+#include "systems/cache/cache.h"
+#include "systems/cache/lru_cache.h"
+#include "systems/cache/lfu_cache.h"
 
-using namespace hs_cache;
+using namespace cfs::cache;
 
 // ====== LRU Cache 测试 ======
 void test_lru_basic() {
@@ -18,7 +15,6 @@ void test_lru_basic() {
     cache.put(1, "one");
     cache.put(2, "two");
     cache.put(3, "three");
-
     assert(cache.size() == 3);
     assert(cache.get(1).value() == "one");
     assert(cache.get(2).value() == "two");
@@ -32,9 +28,7 @@ void test_lru_eviction() {
     cache.put(1, 10);
     cache.put(2, 20);
     cache.put(3, 30);
-    // 访问 key=1 使其变为最近使用
     cache.get(1);
-    // 插入 key=4，容量已满，应淘汰最久未使用的 key=2
     cache.put(4, 40);
     assert(cache.size() == 3);
     assert(!cache.contains(2));
@@ -92,7 +86,6 @@ void test_lfu_basic() {
     cache.put(1, "one");
     cache.put(2, "two");
     cache.put(3, "three");
-
     assert(cache.size() == 3);
     assert(cache.get(1).value() == "one");
     assert(cache.get(2).value() == "two");
@@ -106,10 +99,8 @@ void test_lfu_eviction() {
     cache.put(1, 10);
     cache.put(2, 20);
     cache.put(3, 30);
-    // 多次访问 key=1，提升其频次
     cache.get(1);
     cache.get(1);
-    // 插入 key=4，应淘汰频次最低且最久未使用的 key=2
     cache.put(4, 40);
     assert(cache.size() == 3);
     assert(!cache.contains(2));
@@ -160,18 +151,15 @@ void test_lfu_polymorphism() {
 
 void test_lfu_freq_decay() {
     std::cout << "[LFU] frequency decay (K-LFU)... ";
-    // 设置 max_average_num=3，低阈值方便触发降频
     KLfuCache<int, int> cache(3, 3);
     cache.put(1, 10);
     cache.put(2, 20);
     cache.put(3, 30);
-    // 频繁访问触发全局降频
     for (int i = 0; i < 15; ++i) {
         cache.get(1);
         cache.get(2);
         cache.get(3);
     }
-    // 缓存应该仍然有效，不会崩溃
     assert(cache.contains(1));
     assert(cache.contains(2));
     assert(cache.contains(3));
@@ -179,9 +167,8 @@ void test_lfu_freq_decay() {
 }
 
 int main() {
-    std::cout << "===== HighSpeedCacheSystem Tests =====" << std::endl;
+    std::cout << "===== cpp-from-scratch / systems/cache =====" << std::endl;
 
-    // LRU 测试
     test_lru_basic();
     test_lru_eviction();
     test_lru_update();
@@ -189,7 +176,6 @@ int main() {
     test_lru_zero_capacity();
     test_lru_polymorphism();
 
-    // LFU 测试
     test_lfu_basic();
     test_lfu_eviction();
     test_lfu_update();
@@ -198,6 +184,6 @@ int main() {
     test_lfu_polymorphism();
     test_lfu_freq_decay();
 
-    std::cout << std::endl << "All " << 13 << " tests passed!" << std::endl;
+    std::cout << std::endl << "All 13 tests passed!" << std::endl;
     return 0;
 }
